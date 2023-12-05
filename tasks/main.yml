@@ -1,0 +1,41 @@
+---
+# tasks file for ansible-kafka
+
+- name: Create zookeeper directories
+  file:
+    state: directory
+    path: "{{ item.path }}"
+    mode: "{{ item.mode | default('0755') }}"
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
+  with_items: "{{ docker_kafka__zookeeper_directories }}"
+
+- name: Create kafka directories
+  file:
+    state: directory
+    path: "{{ item.path }}"
+    mode: "{{ item.mode | default('0755') }}"
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
+  with_items: "{{ docker_kafka__kafka_directories }}"
+
+- name: Create network
+  docker_network:
+    name: "{{ docker_kafka__network_name }}"
+    state: present
+  when: docker_kafka__network_name is defined and docker_kafka__network_name != ''
+
+- name: Create Docker Compose directory
+  file:
+    path: /opt/kafka
+    state: directory
+
+- name: Copy Docker Compose template
+  template:
+    src: templates/docker-compose.j2
+    dest: /opt/kafka/docker-compose.yml
+
+- name: Start Kafka containers
+  community.docker.docker_compose:
+    project_src: /opt/kafka
+    state: present

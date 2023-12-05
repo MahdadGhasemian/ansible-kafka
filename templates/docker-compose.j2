@@ -1,0 +1,58 @@
+version: "3.8"
+
+{% if docker_kafka__network_name %}
+networks:
+  {{ docker_kafka__network_name }}:
+    external: true
+{% endif %}
+
+services:
+  {{ docker_kafka__zookeeper_service_name }}:
+    container_name: {{ docker_kafka__zookeeper_service_name }}
+    image: {{ docker_kafka__zookeeper_image }}
+    user: root
+{% if docker_kafka__exported_mode == "yes" %}
+    ports:
+      - {{ docker_kafka__zookeeper_port }}:2181
+{% endif %}
+    volumes:
+      - "{{ docker_kafka__zookeeper_home }}:/bitnami/zookeeper"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    restart: always
+{% if docker_kafka__network_name %}
+    networks:
+      - {{ docker_kafka__network_name }}
+{% endif %}
+
+  {{ docker_kafka__kafka_service_name }}:
+    container_name: {{ docker_kafka__kafka_service_name }}
+    image: {{ docker_kafka__kafka_image }}
+    user: root
+{% if docker_kafka__exported_mode == "yes" %}
+    ports:
+      - {{ docker_kafka__kafka_external_port }}:9093
+{% endif %}
+    volumes:
+      - "{{ docker_kafka__kafka_home }}:/bitnami/kafka"
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_CFG_ZOOKEEPER_CONNECT={{ docker_kafka__zookeeper_service_name }}:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+{% if docker_kafka__exported_mode == "yes" %}
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:{{ docker_kafka__kafka_client_port }},EXTERNAL://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://{{ docker_kafka__kafka_service_name }}:{{ docker_kafka__kafka_client_port }},EXTERNAL://localhost:9093
+{% else %}
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:{{ docker_kafka__kafka_client_port }}
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://{{ docker_kafka__kafka_service_name }}:{{ docker_kafka__kafka_client_port }}
+{% endif %}
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=CLIENT
+    restart: always
+    depends_on:
+      - {{ docker_kafka__zookeeper_service_name }}
+{% if docker_kafka__network_name %}
+    networks:
+      - {{ docker_kafka__network_name }}
+{% endif %}

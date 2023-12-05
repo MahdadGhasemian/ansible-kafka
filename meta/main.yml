@@ -1,0 +1,16 @@
+galaxy_info:
+  author: Mahdad Ghasemian
+  description: Ansible galaxy role used to run a kafka broker on a docker container
+  license: "license (BSD, MIT)"
+  min_ansible_version: 2.1
+  platforms:
+    - name: Ubuntu
+      versions:
+        - all
+  galaxy_tags:
+    - kafak
+    - docker-kafka
+    - kafka-on-docker
+    - zookeeper
+
+dependencies: []
